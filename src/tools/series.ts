@@ -1,12 +1,15 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { apiRequest } from "../client/yroun-api.js";
+import { toTiptapContentString } from "../tiptap.js";
 
 /**
  * yroun_series_* tools — serialized-fiction authoring over
- * /oapi/hubs/{hubUid}/series*. Episode `content` is PLAIN PROSE text
- * (unlike hub pages' Tiptap JSON) — the same format the synapse series
- * writer produces; pass it through verbatim, never wrap.
+ * /oapi/hubs/{hubUid}/series*. Episode `content` is stored as a Tiptap
+ * document JSON string (same standard as hub pages — the www reader
+ * parses it unconditionally); plain prose input is auto-wrapped, a full
+ * Tiptap doc passes through. v0.2 shipped these tools sending raw
+ * prose, which fell to the reader's parse-fallback — fixed 2026-07-11.
  */
 
 type ToolResult = { content: Array<{ type: "text"; text: string }>; isError?: boolean };
@@ -99,13 +102,13 @@ export function registerSeriesTools(server: McpServer): void {
     {
       description:
         "Write or overwrite one episode by number (idempotent — safe to re-run while drafting). " +
-        "content is plain prose text, NOT page-document JSON.",
+        "content may be plain prose (auto-converted to the episode document format) or a full Tiptap doc JSON.",
       inputSchema: {
         hubUid: z.string(),
         seriesUid: z.string(),
         episodeNum: z.number().int().min(1),
         title: z.string(),
-        content: z.string().describe("Full episode prose"),
+        content: z.string().describe("Full episode prose (or Tiptap doc JSON)"),
       },
     },
     async ({ hubUid, seriesUid, episodeNum, title, content }) =>
@@ -113,7 +116,7 @@ export function registerSeriesTools(server: McpServer): void {
         apiRequest(
           "PUT",
           `/oapi/hubs/${enc(hubUid)}/series/${enc(seriesUid)}/episodes/${episodeNum}`,
-          { title, content },
+          { title, content: toTiptapContentString(content) },
         ),
       ),
   );
@@ -123,19 +126,19 @@ export function registerSeriesTools(server: McpServer): void {
     {
       description:
         "Append the NEXT episode (server assigns the number). Prefer yroun_series_upsert_episode " +
-        "when you know the episode number. content is plain prose text.",
+        "when you know the episode number. content may be plain prose (auto-converted) or Tiptap doc JSON.",
       inputSchema: {
         hubUid: z.string(),
         seriesUid: z.string(),
         title: z.string(),
-        content: z.string().describe("Full episode prose"),
+        content: z.string().describe("Full episode prose (or Tiptap doc JSON)"),
       },
     },
     async ({ hubUid, seriesUid, title, content }) =>
       run(() =>
         apiRequest("POST", `/oapi/hubs/${enc(hubUid)}/series/${enc(seriesUid)}/episodes`, {
           title,
-          content,
+          content: toTiptapContentString(content),
         }),
       ),
   );
