@@ -11,11 +11,13 @@ export const CONFIG = {
   /** Registered first-party public client (PKCE-only, no secret). */
   clientId: "yroun-mcp",
   /**
-   * Scopes for v0.1 (hub + posts tools). The seeded client also allows
-   * mate/series scopes — requested only when those tools ship (P2),
-   * so today's consent screen matches today's capabilities.
+   * Scopes match the shipped tool surface: hub + posts (v0.1) and
+   * series authoring (v0.2, founder 2026-07-10). The seeded client also
+   * allows mate scopes — requested only when mate tools ship, so the
+   * consent screen always matches actual capabilities. Users connected
+   * before a scope was added get a one-time delta-consent re-prompt.
    */
-  scopes: ["hub.read", "hub.write", "posts.read", "posts.write"],
+  scopes: ["hub.read", "hub.write", "posts.read", "posts.write", "series.read", "series.write"],
   // Loopback redirect. The registered pattern is
   // `http://127.0.0.1:<any port>/oauth/callback` (RFC 8252 §7.3) —
   // host MUST be the 127.0.0.1 literal and path MUST be /oauth/callback.

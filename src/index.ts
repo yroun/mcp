@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { registerAuthTools } from "./tools/auth.js";
 import { registerHubTools } from "./tools/hub.js";
+import { registerSeriesTools } from "./tools/series.js";
 
 /**
  * @yroun/mcp — the official Yroun MCP server.
@@ -18,6 +19,7 @@ async function main(): Promise<void> {
 
   registerAuthTools(server);
   registerHubTools(server);
+  registerSeriesTools(server);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);
