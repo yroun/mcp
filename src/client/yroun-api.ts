@@ -55,20 +55,40 @@ export async function apiRequest<T>(
     resp = await doFetch(path, init, token);
   }
 
-  if (resp.status === 204) return undefined as T;
-
   if (!resp.ok) {
-    const errBody = (await resp.json().catch(() => null)) as {
-      error?: string;
-      errorMessage?: string;
-    } | null;
-    const errorType = errBody?.error ?? `HTTP_${resp.status}`;
-    let message = errBody?.errorMessage ?? `request failed with HTTP ${resp.status}`;
-    if (resp.status === 429) {
-      message = `credit pool exhausted: ${message} — credits refill on the plan schedule; see console.yroun.com/usage`;
-    }
-    throw new YrounApiError(resp.status, errorType, `${errorType}: ${message} (${method} ${path})`);
+    const errBody = (await resp.json().catch(() => null)) as ErrorBody | null;
+    const d = describeApiError(resp.status, errBody, method, path);
+    throw new YrounApiError(resp.status, d.errorType, d.message);
   }
 
-  return (await resp.json()) as T;
+  // 204 and empty-200 bodies both parse to undefined — some write
+  // endpoints answer with no payload; JSON.parse("") must never be the
+  // thing that fails an otherwise-successful call (Postel).
+  const text = await resp.text();
+  return (text.trim() ? JSON.parse(text) : undefined) as T;
+}
+
+export interface ErrorBody {
+  error?: string;
+  errorMessage?: string;
+}
+
+/**
+ * Pure server-error → tool-error mapping ({error, errorMessage} is the
+ * documented /oapi failure shape). Kept pure + tested: the message IS
+ * the agent's remedy surface — cause + what-to-do, per the API-error
+ * house rule.
+ */
+export function describeApiError(
+  status: number,
+  errBody: ErrorBody | null,
+  method: string,
+  path: string,
+): { errorType: string; message: string } {
+  const errorType = errBody?.error ?? `HTTP_${status}`;
+  let message = errBody?.errorMessage ?? `request failed with HTTP ${status}`;
+  if (status === 429) {
+    message = `credit pool exhausted: ${message} — credits refill on the plan schedule; see console.yroun.com/usage`;
+  }
+  return { errorType, message: `${errorType}: ${message} (${method} ${path})` };
 }

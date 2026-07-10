@@ -1,8 +1,9 @@
-import { createHash, randomBytes } from "node:crypto";
+import { randomBytes } from "node:crypto";
 import { createServer } from "node:http";
 import { spawn } from "node:child_process";
 import type { AddressInfo } from "node:net";
 import { CONFIG } from "../config.js";
+import { b64url, buildAuthorizeUrl, challengeS256, isExpiringSoon, rotateTokens } from "./pkce.js";
 import { clearTokens, loadTokens, saveTokens, type StoredTokens } from "./storage.js";
 
 /**
@@ -19,9 +20,6 @@ import { clearTokens, loadTokens, saveTokens, type StoredTokens } from "./storag
  *    whole chain)
  *  - 60s expiry skew on access-token reuse
  */
-
-const b64url = (buf: Buffer): string =>
-  buf.toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 
 interface TokenResponse {
   access_token: string;
@@ -49,14 +47,9 @@ async function tokenRequest(body: URLSearchParams): Promise<TokenResponse> {
 }
 
 function persist(json: TokenResponse, fallbackRefresh?: string): StoredTokens {
-  const tokens: StoredTokens = {
-    access: json.access_token,
-    // Rotation: server always issues a new refresh; keep the old one
-    // only if (unexpectedly) none came back.
-    refresh: json.refresh_token ?? fallbackRefresh ?? "",
-    exp: Date.now() + (json.expires_in ?? 3600) * 1000,
-    scope: json.scope,
-  };
+  // Rotation policy is the pure rotateTokens (see its tests) — this
+  // wrapper only supplies the clock and writes the file.
+  const tokens: StoredTokens = rotateTokens(json, Date.now(), fallbackRefresh);
   saveTokens(tokens);
   return tokens;
 }
@@ -84,7 +77,7 @@ function openBrowser(url: string): void {
  */
 export async function interactiveSignIn(timeoutMs = 300_000): Promise<string> {
   const verifier = b64url(randomBytes(32));
-  const challenge = b64url(createHash("sha256").update(verifier).digest());
+  const challenge = challengeS256(verifier);
   const state = b64url(randomBytes(16));
 
   return await new Promise<string>((resolve, reject) => {
@@ -147,15 +140,14 @@ export async function interactiveSignIn(timeoutMs = 300_000): Promise<string> {
     server.listen(0, "127.0.0.1", () => {
       const { port } = server.address() as AddressInfo;
       redirectUri = `http://127.0.0.1:${port}${CONFIG.redirectPath}`;
-      const authorizeUrl =
-        `${CONFIG.oauthBase}/oauth/authorize` +
-        `?client_id=${encodeURIComponent(CONFIG.clientId)}` +
-        `&response_type=code` +
-        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-        `&scope=${encodeURIComponent(CONFIG.scopes.join(" "))}` +
-        `&state=${state}` +
-        `&code_challenge=${challenge}` +
-        `&code_challenge_method=S256`;
+      const authorizeUrl = buildAuthorizeUrl({
+        oauthBase: CONFIG.oauthBase,
+        clientId: CONFIG.clientId,
+        redirectUri,
+        scopes: CONFIG.scopes,
+        state,
+        codeChallenge: challenge,
+      });
       console.error(`[yroun-mcp] opening browser for sign-in: ${authorizeUrl}`);
       openBrowser(authorizeUrl);
     });
@@ -199,7 +191,7 @@ async function refreshTokens(current: StoredTokens): Promise<StoredTokens> {
 export async function getValidAccessToken(): Promise<string | null> {
   const tokens = loadTokens();
   if (!tokens) return null;
-  if (Date.now() > tokens.exp - 60_000) {
+  if (isExpiringSoon(tokens.exp, Date.now())) {
     if (!tokens.refresh) {
       clearTokens();
       return null;
