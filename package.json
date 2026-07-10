@@ -1,0 +1,42 @@
+{
+  "name": "@yroun/mcp",
+  "version": "0.1.0",
+  "description": "Official MCP server for Yroun — Claude/Cursor/etc. can read+write Hub pages, posts, schedules, members via Yroun Open API.",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "yroun-mcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "typescript": "^5.7.2"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "yroun",
+    "hub",
+    "claude"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yroun/mcp"
+  },
+  "license": "MIT"
+}
