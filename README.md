@@ -52,6 +52,12 @@ you installed that way, re-register once with the `@latest` command above.
 To see what you're running, ask your AI client to run **`yroun_auth_status`** — it
 reports the connector version and flags it when a newer release exists.
 
+Still on an old version after re-registering with `@latest`? Two known causes:
+npm's supply-chain guard `min-release-age` (pnpm: `minimumReleaseAge`) holds back
+releases younger than N days — check `npm config get min-release-age`, and register
+with an explicit version (`npx -y @yroun/mcp@x.y.z`) when you need a fresh release
+immediately; or a stale npx cache — `npx clear-npx-cache`, then relaunch.
+
 ## First run
 
 Ask your AI client to run the **`yroun_connect`** tool. Your browser opens, you sign in to Yroun and approve the requested permissions, and the connector is ready. The grant persists across sessions.
