@@ -1,6 +1,6 @@
 {
   "name": "@yroun/mcp",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Official MCP server for Yroun — Claude/Cursor/etc. can read+write Hub pages, posts, schedules, members via Yroun Open API.",
   "type": "module",
   "main": "dist/index.js",
