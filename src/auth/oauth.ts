@@ -75,6 +75,44 @@ function openBrowser(url: string): void {
  * code and the token exchange succeeds; rejects on timeout/denial.
  * Returns the granted scope string for display.
  */
+/**
+ * Branded loopback-callback page. This is the last thing the user sees in
+ * the OAuth flow, served from the connector's own ephemeral local server —
+ * no external assets (nothing else is reachable from a file-less page),
+ * dark-mode aware, bilingual. Escapes the error message (it can echo
+ * server/user input).
+ */
+function callbackPage(ok: boolean, errorMsg?: string): string {
+  const esc = (s: string) =>
+    s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const title = ok ? "Connected" : "Sign-in failed";
+  const icon = ok ? "✓" : "✕";
+  const iconColor = ok ? "#22c55e" : "#ef4444";
+  const heading = ok ? "Yroun 연결 완료" : "Yroun 연결 실패";
+  const body = ok
+    ? "이 탭을 닫고 AI 클라이언트로 돌아가세요.<br>You're connected — close this tab and return to your AI client."
+    : `${esc(errorMsg ?? "unknown error")}<br>이 탭을 닫고 다시 시도해 주세요. / Close this tab and try again.`;
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Yroun — ${title}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root { color-scheme: light dark; }
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;
+         background:#f5f6f8; color:#1a1c20; }
+  @media (prefers-color-scheme: dark) { body { background:#101216; color:#e8eaee; } .card { background:#1a1d23 !important; box-shadow:0 8px 32px rgba(0,0,0,.5) !important; } .sub { color:#9aa1ab !important; } }
+  .card { background:#fff; border-radius:16px; padding:48px 56px; text-align:center;
+          box-shadow:0 8px 32px rgba(16,18,22,.08); max-width:420px; margin:24px; }
+  .brand { font-weight:800; font-size:20px; letter-spacing:-.02em; margin-bottom:28px; }
+  .icon { width:56px; height:56px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+          font-size:28px; font-weight:700; color:#fff; background:${iconColor}; margin-bottom:20px; }
+  h1 { font-size:20px; margin:0 0 12px; letter-spacing:-.01em; }
+  .sub { font-size:14px; line-height:1.6; color:#5b626d; margin:0; }
+</style></head><body>
+<div class="card"><div class="brand">Yroun</div><div class="icon">${icon}</div>
+<h1>${heading}</h1><p class="sub">${body}</p></div>
+</body></html>`;
+}
+
 export async function interactiveSignIn(timeoutMs = 300_000): Promise<string> {
   const verifier = b64url(randomBytes(32));
   const challenge = challengeS256(verifier);
@@ -89,7 +127,7 @@ export async function interactiveSignIn(timeoutMs = 300_000): Promise<string> {
       }
       const fail = (msg: string) => {
         res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-        res.end(`<html><body><p>Yroun sign-in failed: ${msg}. You can close this tab.</p></body></html>`);
+        res.end(callbackPage(false, msg));
         cleanup();
         reject(new Error(msg));
       };
@@ -111,9 +149,7 @@ export async function interactiveSignIn(timeoutMs = 300_000): Promise<string> {
         );
         const stored = persist(json);
         res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
-        res.end(
-          "<html><body><p>Yroun connected. You can close this tab and return to your AI client.</p></body></html>",
-        );
+        res.end(callbackPage(true));
         cleanup();
         resolve(stored.scope ?? CONFIG.scopes.join(" "));
       } catch (e) {
