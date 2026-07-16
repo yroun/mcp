@@ -1,17 +1,10 @@
 #!/usr/bin/env node
-import { createRequire } from "node:module";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { registerAuthTools } from "./tools/auth.js";
 import { registerHubTools } from "./tools/hub.js";
 import { registerSeriesTools } from "./tools/series.js";
-
-// serverInfo.version reads package.json so it can never drift from the
-// published version again (0.2.2 shipped announcing itself as "0.1.0").
-// dist/index.js → ../package.json resolves to the package root both in
-// the repo and inside the installed npm package.
-const require = createRequire(import.meta.url);
-const { version: PKG_VERSION } = require("../package.json") as { version: string };
+import { PKG_VERSION } from "./version.js";
 
 /**
  * @yroun/mcp — the official Yroun MCP server.

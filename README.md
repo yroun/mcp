@@ -9,7 +9,7 @@ Auth is OAuth 2.0 (Authorization Code + PKCE): you sign in once in your browser,
 ### Claude Code
 
 ```bash
-claude mcp add yroun -- npx -y @yroun/mcp
+claude mcp add yroun -- npx -y @yroun/mcp@latest
 ```
 
 ### Claude Desktop
@@ -21,7 +21,7 @@ Add to `claude_desktop_config.json` (Settings → Developer → Edit Config):
   "mcpServers": {
     "yroun": {
       "command": "npx",
-      "args": ["-y", "@yroun/mcp"]
+      "args": ["-y", "@yroun/mcp@latest"]
     }
   }
 }
@@ -36,11 +36,21 @@ Add to `.cursor/mcp.json` (project) or `~/.cursor/mcp.json` (global):
   "mcpServers": {
     "yroun": {
       "command": "npx",
-      "args": ["-y", "@yroun/mcp"]
+      "args": ["-y", "@yroun/mcp@latest"]
     }
   }
 }
 ```
+
+## Updating & version check
+
+The `@latest` spec above makes `npx` re-resolve the newest published release on every
+launch — installs that use it stay current automatically. A bare `@yroun/mcp` spec
+(the pre-0.2.3 instruction) can stay **pinned to npx's cached copy indefinitely**; if
+you installed that way, re-register once with the `@latest` command above.
+
+To see what you're running, ask your AI client to run **`yroun_auth_status`** — it
+reports the connector version and flags it when a newer release exists.
 
 ## First run
 

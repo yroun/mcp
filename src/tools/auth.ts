@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { CONFIG } from "../config.js";
 import { getValidAccessToken, interactiveSignIn, isSignedIn, signOut } from "../auth/oauth.js";
+import { PKG_VERSION, UPGRADE_HINT, fetchLatestVersion, isBehind } from "../version.js";
 
 /**
  * Connection lifecycle tools. yroun_connect is the ONE entry point that
@@ -46,27 +47,42 @@ export function registerAuthTools(server: McpServer): void {
   server.registerTool(
     "yroun_auth_status",
     {
-      description: "Check whether this machine is connected to Yroun, and as which account.",
+      description:
+        "Check whether this machine is connected to Yroun (and as which account), plus the " +
+        "connector version and whether a newer @yroun/mcp release is available.",
       inputSchema: {},
       annotations: { readOnlyHint: true },
     },
     async () => {
+      // Version line first — it must render even when not connected, so a
+      // stale connector is diagnosable before sign-in.
+      const latest = await fetchLatestVersion();
+      let versionLine = `Connector version: ${PKG_VERSION}`;
+      if (latest && isBehind(PKG_VERSION, latest)) {
+        versionLine += ` — OUTDATED, latest is ${latest}. ${UPGRADE_HINT}`;
+      } else if (latest) {
+        versionLine += ` (latest)`;
+      }
+
       const token = await getValidAccessToken().catch(() => null);
       if (!token) {
-        return text("Not connected. Run the yroun_connect tool to sign in.");
+        return text(`Not connected. Run the yroun_connect tool to sign in.\n${versionLine}`);
       }
       try {
         const resp = await fetch(`${CONFIG.oauthBase}/oauth/userinfo`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (!resp.ok) return text(`Connected, but userinfo returned HTTP ${resp.status}.`, true);
+        if (!resp.ok) {
+          return text(`Connected, but userinfo returned HTTP ${resp.status}.\n${versionLine}`, true);
+        }
         const info = (await resp.json()) as { name?: string; preferred_username?: string; email?: string };
         return text(
           `Connected as ${info.name ?? info.preferred_username ?? "unknown"}` +
-            (info.email ? ` (${info.email})` : ""),
+            (info.email ? ` (${info.email})` : "") +
+            `\n${versionLine}`,
         );
       } catch (err) {
-        return text(`Connected locally, but the status check failed: ${err}`, true);
+        return text(`Connected locally, but the status check failed: ${err}\n${versionLine}`, true);
       }
     },
   );

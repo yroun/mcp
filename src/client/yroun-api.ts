@@ -1,5 +1,6 @@
 import { CONFIG } from "../config.js";
 import { forceRefresh, getValidAccessToken } from "../auth/oauth.js";
+import { PKG_VERSION } from "../version.js";
 
 /**
  * Thin authenticated wrapper over the Yroun Open API (/oapi/**).
@@ -31,6 +32,9 @@ async function doFetch(path: string, init: RequestInit, token: string): Promise<
     headers: {
       ...(init.headers ?? {}),
       Authorization: `Bearer ${token}`,
+      // Client identification — lets the server see the fleet's version
+      // distribution and drive upgrade notices / minimum-version gates.
+      "User-Agent": `yroun-mcp/${PKG_VERSION}`,
       ...(init.body ? { "Content-Type": "application/json" } : {}),
     },
   });
