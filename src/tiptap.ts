@@ -8,6 +8,34 @@
  *   - plain text / markdown-ish text → wrapped into paragraphs.
  * Output is always the exact string the server expects.
  */
+/**
+ * Inverse of toTiptapContentString for the read tools: extract plain
+ * prose from a stored Tiptap document string. Block nodes join with a
+ * blank line — the same shape the write tools accept, so a read → edit →
+ * upsert round-trip preserves paragraph structure. Non-doc input (legacy
+ * raw text rows) passes through unchanged.
+ */
+export function tiptapContentToPlainText(stored: string): string {
+  let doc: unknown;
+  try {
+    doc = JSON.parse(stored);
+  } catch {
+    return stored;
+  }
+  if (!doc || typeof doc !== "object" || (doc as { type?: string }).type !== "doc") return stored;
+  const collect = (node: unknown): string => {
+    if (!node || typeof node !== "object") return "";
+    const n = node as { type?: string; text?: string; content?: unknown[] };
+    if (n.type === "text") return n.text ?? "";
+    return (n.content ?? []).map(collect).join("");
+  };
+  const blocks = ((doc as { content?: unknown[] }).content ?? [])
+    .map(collect)
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0);
+  return blocks.join("\n\n");
+}
+
 export function toTiptapContentString(input: string): string {
   const trimmed = input.trim();
   if (trimmed.startsWith("{")) {

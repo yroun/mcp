@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { toTiptapContentString } from "./tiptap.js";
+import { tiptapContentToPlainText, toTiptapContentString } from "./tiptap.js";
 
 // L1 matrix — the page-content conversion policy. A wrong shape here
 // corrupts a hub page silently (the reader JSON.parses unconditionally).
@@ -47,5 +47,36 @@ describe("toTiptapContentString", () => {
   test("malformed JSON starting with a brace falls back to text wrapping", () => {
     const out = JSON.parse(toTiptapContentString("{not json at all"));
     expect(out.content[0].content[0].text).toBe("{not json at all");
+  });
+});
+
+describe("tiptapContentToPlainText", () => {
+  test("extracts blank-line-joined prose from a doc", () => {
+    const doc = JSON.stringify({
+      type: "doc",
+      content: [
+        { type: "paragraph", content: [{ type: "text", text: "첫 문단." }] },
+        { type: "paragraph", content: [{ type: "text", text: "둘째 " }, { type: "text", text: "문단." }] },
+      ],
+    });
+    expect(tiptapContentToPlainText(doc)).toBe("첫 문단.\n\n둘째 문단.");
+  });
+
+  test("round-trips through toTiptapContentString", () => {
+    const prose = "A.\n\nB.\n\nC.";
+    expect(tiptapContentToPlainText(toTiptapContentString(prose))).toBe(prose);
+  });
+
+  test("passes non-doc/legacy input through unchanged", () => {
+    expect(tiptapContentToPlainText("plain legacy text")).toBe("plain legacy text");
+    expect(tiptapContentToPlainText('{"not":"a doc"}')).toBe('{"not":"a doc"}');
+  });
+
+  test("skips empty blocks", () => {
+    const doc = JSON.stringify({
+      type: "doc",
+      content: [{ type: "paragraph" }, { type: "paragraph", content: [{ type: "text", text: "only" }] }],
+    });
+    expect(tiptapContentToPlainText(doc)).toBe("only");
   });
 });

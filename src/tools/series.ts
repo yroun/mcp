@@ -1,7 +1,7 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { apiRequest } from "../client/yroun-api.js";
-import { toTiptapContentString } from "../tiptap.js";
+import { apiRequest, publicRequest } from "../client/yroun-api.js";
+import { tiptapContentToPlainText, toTiptapContentString } from "../tiptap.js";
 
 /**
  * yroun_series_* tools — serialized-fiction authoring over
@@ -51,6 +51,62 @@ export function registerSeriesTools(server: McpServer): void {
         if (limit != null) params.set("limit", String(limit));
         const qs = params.toString();
         return apiRequest("GET", `/oapi/hubs/${enc(hubUid)}/series${qs ? `?${qs}` : ""}`);
+      }),
+  );
+
+  server.registerTool(
+    "yroun_series_get",
+    {
+      description:
+        "Read one series in full — catalog (title, synopsis, genre, status) + cast. " +
+        "Start a revision/replanning session here so edits build on the current state.",
+      inputSchema: { seriesUid: z.string() },
+      annotations: READ,
+    },
+    async ({ seriesUid }) => run(() => publicRequest(`/api/v1/series/${enc(seriesUid)}`)),
+  );
+
+  server.registerTool(
+    "yroun_series_get_bible",
+    {
+      description:
+        "Read the series story bible — worldview, theme, message, planned beats, foreshadowing, " +
+        "ending. Read this BEFORE yroun_series_set_bible: set replaces what's stored.",
+      inputSchema: { seriesUid: z.string() },
+      annotations: READ,
+    },
+    async ({ seriesUid }) =>
+      run(async () => (await publicRequest(`/api/v1/series/${enc(seriesUid)}/bible`)) ?? "No bible set yet."),
+  );
+
+  server.registerTool(
+    "yroun_series_list_episodes",
+    {
+      description:
+        "List a series' episodes (number, title, uid, word count) — no bodies. " +
+        "Fetch a body with yroun_series_get_episode.",
+      inputSchema: { seriesUid: z.string() },
+      annotations: READ,
+    },
+    async ({ seriesUid }) => run(() => publicRequest(`/api/v1/series/${enc(seriesUid)}/episodes`)),
+  );
+
+  server.registerTool(
+    "yroun_series_get_episode",
+    {
+      description:
+        "Read one episode's full text (episodeUid from yroun_series_list_episodes). Returns plain " +
+        "prose with blank-line paragraph breaks — the same shape upsert accepts, so read → edit → " +
+        "yroun_series_upsert_episode round-trips cleanly.",
+      inputSchema: { episodeUid: z.string() },
+      annotations: READ,
+    },
+    async ({ episodeUid }) =>
+      run(async () => {
+        const ep = await publicRequest<{ content?: string } & Record<string, unknown>>(
+          `/api/v1/series/episodes/${enc(episodeUid)}`,
+        );
+        return { ...ep, content: tiptapContentToPlainText(ep.content ?? "") };
       }),
   );
 

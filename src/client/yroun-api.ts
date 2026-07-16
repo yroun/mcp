@@ -72,6 +72,27 @@ export async function apiRequest<T>(
   return (text.trim() ? JSON.parse(text) : undefined) as T;
 }
 
+/**
+ * Unauthenticated GET against the public reader API (/api/v1/series/*).
+ * Series detail / bible / episode bodies are public reader data — the
+ * OAuth surface has no read twins for them (its GETs stop at the hub
+ * series list), so the read tools go straight to the public endpoints.
+ * No token attached: `Authorization: Bearer` on /api/** is not a valid
+ * scheme there and must not leak where it isn't needed.
+ */
+export async function publicRequest<T>(path: string): Promise<T> {
+  const resp = await fetch(`${CONFIG.apiBase}${path}`, {
+    headers: { "User-Agent": `yroun-mcp/${PKG_VERSION}` },
+  });
+  if (!resp.ok) {
+    const errBody = (await resp.json().catch(() => null)) as ErrorBody | null;
+    const d = describeApiError(resp.status, errBody, "GET", path);
+    throw new YrounApiError(resp.status, d.errorType, d.message);
+  }
+  const text = await resp.text();
+  return (text.trim() ? JSON.parse(text) : undefined) as T;
+}
+
 export interface ErrorBody {
   error?: string;
   errorMessage?: string;

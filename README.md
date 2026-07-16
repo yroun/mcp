@@ -74,6 +74,7 @@ Ask your AI client to run the **`yroun_connect`** tool. Your browser opens, you 
 | `yroun_hub_list_schedules` / `yroun_hub_upsert_schedule` | Calendar schedules (idempotent upsert by `externalId`) |
 | `yroun_hub_list_members` | Member roster |
 | `yroun_series_list` / `yroun_series_create` / `yroun_series_delete` | Serialized fiction in a hub |
+| `yroun_series_get` / `yroun_series_get_bible` / `yroun_series_list_episodes` / `yroun_series_get_episode` | Read the current state — catalog+cast, story bible, episode list, episode text (plain prose, round-trips with upsert). Start revision / replanning sessions here |
 | `yroun_series_upsert_episode` / `yroun_series_add_episode` | Write episodes (plain text auto-converted to the episode document format; upsert by number is idempotent) |
 | `yroun_series_set_bible` / `yroun_series_set_cast` | Story bible (worldview, beats, foreshadowing) + character cast |
 | `yroun_series_update_status` / `yroun_series_set_pen_name` | Lifecycle status + public byline |
