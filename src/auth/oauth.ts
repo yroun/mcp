@@ -77,17 +77,21 @@ function openBrowser(url: string): void {
  */
 /**
  * Branded loopback-callback page. This is the last thing the user sees in
- * the OAuth flow, served from the connector's own ephemeral local server —
- * no external assets (nothing else is reachable from a file-less page),
- * dark-mode aware, bilingual. Escapes the error message (it can echo
- * server/user input).
+ * the OAuth flow, served from the connector's own ephemeral local server.
+ * Styling mirrors the Yroun global design system (content pkgs/ui
+ * global.css — auth-card, --yroun-blue #155cfb, --surface/--prime tokens,
+ * Apple SD Gothic Neo stack) so the hop from accounts.yroun.com feels
+ * seamless; tokens are inlined because this page has no bundle. The logo
+ * is the same served asset the consent screen shows (best-effort — hidden
+ * on load failure, page must render offline too). Escapes the error
+ * message (it can echo server/user input).
  */
 function callbackPage(ok: boolean, errorMsg?: string): string {
   const esc = (s: string) =>
     s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   const title = ok ? "Connected" : "Sign-in failed";
   const icon = ok ? "✓" : "✕";
-  const iconColor = ok ? "#22c55e" : "#ef4444";
+  const iconBg = ok ? "#155cfb" : "#ef4444"; // success = yroun-blue, not generic green
   const heading = ok ? "Yroun 연결 완료" : "Yroun 연결 실패";
   const body = ok
     ? "이 탭을 닫고 AI 클라이언트로 돌아가세요.<br>You're connected — close this tab and return to your AI client."
@@ -95,20 +99,27 @@ function callbackPage(ok: boolean, errorMsg?: string): string {
   return `<!doctype html><html><head><meta charset="utf-8"><title>Yroun — ${title}</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  :root { color-scheme: light dark; }
+  :root { color-scheme: light dark;
+    --yroun-blue:#155cfb; --surface:#ffffff; --prime:#0a1931; --sub:#71717a; --line:#e4e4e7; --bg:#ffffff; }
+  @media (prefers-color-scheme: dark) {
+    :root { --surface:#1c1f24; --prime:#f8fafc; --sub:#a1a1aa; --line:rgba(255,255,255,.08); --bg:#09090b; }
+  }
   body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
-         font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans KR",sans-serif;
-         background:#f5f6f8; color:#1a1c20; }
-  @media (prefers-color-scheme: dark) { body { background:#101216; color:#e8eaee; } .card { background:#1a1d23 !important; box-shadow:0 8px 32px rgba(0,0,0,.5) !important; } .sub { color:#9aa1ab !important; } }
-  .card { background:#fff; border-radius:16px; padding:48px 56px; text-align:center;
-          box-shadow:0 8px 32px rgba(16,18,22,.08); max-width:420px; margin:24px; }
-  .brand { font-weight:800; font-size:20px; letter-spacing:-.02em; margin-bottom:28px; }
-  .icon { width:56px; height:56px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
-          font-size:28px; font-weight:700; color:#fff; background:${iconColor}; margin-bottom:20px; }
-  h1 { font-size:20px; margin:0 0 12px; letter-spacing:-.01em; }
-  .sub { font-size:14px; line-height:1.6; color:#5b626d; margin:0; }
+         font-family:'Apple SD Gothic Neo','Apple SD 산돌고딕 Neo',AppleSDGothicNeo-Regular,Helvetica,'Malgun Gothic','Nanum Gothic','맑은 고딕',dotum,sans-serif;
+         background:var(--bg); color:var(--prime); }
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:16px;
+          padding:40px 32px; text-align:center; max-width:420px; width:100%; margin:24px;
+          box-shadow:0 1px 2px rgba(0,0,0,.05); }
+  .logo { width:48px; height:48px; border-radius:12px; margin-bottom:12px; }
+  .brand { font-weight:700; font-size:18px; letter-spacing:-.02em; margin-bottom:24px; color:var(--prime); }
+  .icon { width:52px; height:52px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+          font-size:26px; font-weight:700; color:#fff; background:${iconBg}; margin-bottom:20px; }
+  h1 { font-size:20px; font-weight:700; margin:0 0 10px; letter-spacing:-.01em; color:var(--prime); }
+  .sub { font-size:14px; line-height:1.65; color:var(--sub); margin:0; }
 </style></head><body>
-<div class="card"><div class="brand">Yroun</div><div class="icon">${icon}</div>
+<div class="card">
+<img class="logo" src="https://assets.yroun.com/clients/yroun-mcp-logo.png" alt="" onerror="this.style.display='none'">
+<div class="brand">Yroun</div><div class="icon">${icon}</div>
 <h1>${heading}</h1><p class="sub">${body}</p></div>
 </body></html>`;
 }
