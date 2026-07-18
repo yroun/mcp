@@ -87,6 +87,10 @@ Requests are metered by your Yroun plan's unified credit pool (the same meter as
 
 v0.2 requests `hub.read hub.write posts.read posts.write series.read series.write`. Mate tools (and their scopes) arrive in a later release. If you connected on v0.1, the next authorize shows a one-time delta-consent prompt for the series scopes.
 
+## Capability boundary
+
+This connector ships **end-user capabilities only**. Everything it can do, it does as *you* — with your own OAuth grant against the public Open API (`/oapi/**`) plus anonymous public reader endpoints. Admin/operations functionality (showcase curation, ecosystem stats, moderation, provisioning) and privileged credential classes or channels (`X-API-Key`, `/internal/**`, `/ctrl/**`, admin paths) are out of scope by principle and must never be added here — server-side gating is necessary but not sufficient; the distributable's tool surface itself is the boundary. `src/boundary.test.ts` enforces this mechanically: the test suite (and therefore `prepublishOnly`) fails if a privileged path or credential class appears in shipped source.
+
 ## Configuration
 
 | Env var | Default | Purpose |
