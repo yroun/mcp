@@ -48,6 +48,67 @@ describe("toTiptapContentString", () => {
     const out = JSON.parse(toTiptapContentString("{not json at all"));
     expect(out.content[0].content[0].text).toBe("{not json at all");
   });
+
+  test("a stringified columns array is parsed back to a real array — the 2026-08-05 case", () => {
+    const doc = {
+      type: "doc",
+      content: [
+        {
+          type: "apiTableBlock",
+          attrs: { title: "Balances", columns: '[{"key":"balance","label":"Balance"}]' },
+        },
+      ],
+    };
+    const out = JSON.parse(toTiptapContentString(JSON.stringify(doc)));
+    expect(out.content[0].attrs.columns).toEqual([{ key: "balance", label: "Balance" }]);
+  });
+
+  test("real array attrs and non-array strings pass through untouched", () => {
+    const doc = {
+      type: "doc",
+      content: [
+        {
+          type: "apiTableBlock",
+          attrs: { columns: [{ key: "a" }], apiUrl: "https://x.test", staticData: "not json" },
+        },
+      ],
+    };
+    const out = JSON.parse(toTiptapContentString(JSON.stringify(doc)));
+    expect(out.content[0].attrs.columns).toEqual([{ key: "a" }]);
+    expect(out.content[0].attrs.staticData).toBe("not json");
+  });
+
+  test("a stringified object attr is not coerced — only arrays are", () => {
+    const doc = {
+      type: "doc",
+      content: [{ type: "apiTableBlock", attrs: { columns: '{"key":"a"}' } }],
+    };
+    const out = JSON.parse(toTiptapContentString(JSON.stringify(doc)));
+    expect(out.content[0].attrs.columns).toBe('{"key":"a"}');
+  });
+
+  test("the same key on an unrelated node type is not touched", () => {
+    const doc = {
+      type: "doc",
+      content: [{ type: "paragraph", attrs: { columns: "[1]" } }],
+    };
+    const out = JSON.parse(toTiptapContentString(JSON.stringify(doc)));
+    expect(out.content[0].attrs.columns).toBe("[1]");
+  });
+
+  test("widget attrs nested inside a table cell are reached", () => {
+    const doc = {
+      type: "doc",
+      content: [
+        {
+          type: "tableCell",
+          content: [{ type: "chartBlock", attrs: { yAxisKeys: '["score","volume"]' } }],
+        },
+      ],
+    };
+    const out = JSON.parse(toTiptapContentString(JSON.stringify(doc)));
+    expect(out.content[0].content[0].attrs.yAxisKeys).toEqual(["score", "volume"]);
+  });
 });
 
 describe("tiptapContentToPlainText", () => {

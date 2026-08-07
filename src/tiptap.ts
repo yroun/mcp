@@ -36,12 +36,57 @@ export function tiptapContentToPlainText(stored: string): string {
   return blocks.join("\n\n");
 }
 
+/**
+ * Array-shaped widget attrs agents recurringly send as a JSON STRING
+ * (`"columns": "[{...}]"`): the top-level content field IS stringified,
+ * and an author generalizes that one rule to nested attrs. A string
+ * that parses as a JSON array is replaced with the parsed array before
+ * the doc ships; anything else is left as sent (the widget degrades to
+ * its empty state and names the reason). Mirrors the server's
+ * TiptapInlineCodePolicy write-boundary reconciliation — fixing it here
+ * too means the agent's very next read shows the clean shape.
+ * 2026-08-05 incident: a stringified columns crashed the table widget.
+ */
+const WIDGET_ARRAY_ATTRS: Record<string, string[]> = {
+  apiTableBlock: ["columns", "staticData"],
+  chartBlock: ["yAxisKeys", "filterConfigs", "staticData"],
+  // apiChartBlock is a tolerated alias (the server canonicalizes the name).
+  apiChartBlock: ["yAxisKeys", "filterConfigs", "staticData"],
+  apiRequestBlock: ["bodyFields", "customHeaders"],
+  apiQueueBlock: ["groupOrder", "rowColumns"],
+  faqBlock: ["staticData"],
+};
+
+function normalizeWidgetArrayAttrs(node: unknown): void {
+  if (!node || typeof node !== "object") return;
+  if (Array.isArray(node)) {
+    for (const child of node) normalizeWidgetArrayAttrs(child);
+    return;
+  }
+  const n = node as { type?: string; attrs?: Record<string, unknown>; content?: unknown };
+  const arrayKeys = n.type ? WIDGET_ARRAY_ATTRS[n.type] : undefined;
+  if (arrayKeys && n.attrs && typeof n.attrs === "object") {
+    for (const key of arrayKeys) {
+      const value = n.attrs[key];
+      if (typeof value !== "string") continue;
+      try {
+        const parsed = JSON.parse(value);
+        if (Array.isArray(parsed)) n.attrs[key] = parsed;
+      } catch {
+        // Not JSON — leave as sent; the widget renders its empty state.
+      }
+    }
+  }
+  if (n.content) normalizeWidgetArrayAttrs(n.content);
+}
+
 export function toTiptapContentString(input: string): string {
   const trimmed = input.trim();
   if (trimmed.startsWith("{")) {
     try {
       const parsed = JSON.parse(trimmed);
       if (parsed && typeof parsed === "object" && parsed.type === "doc") {
+        normalizeWidgetArrayAttrs(parsed);
         return JSON.stringify(parsed);
       }
     } catch {
