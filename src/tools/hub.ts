@@ -123,8 +123,18 @@ export function registerHubTools(server: McpServer): void {
         const update: Record<string, unknown> = { title };
         if (content != null) update.content = toTiptapContentString(content);
         if (description != null) update.description = description;
-        await apiRequest("PUT", `/oapi/hubs/${enc(hubUid)}/pages/${enc(page.uid)}`, update);
-        return { created: true, pageUid: page.uid, title };
+        // PUT answers 200 { warnings } (2026-08-08; older servers 204 →
+        // undefined). Warnings are advisory widget-auth feedback — e.g. a
+        // connectionRef naming no live connection, or a per-viewer 'shared'
+        // key config. Surfacing them here is the whole point: the agent that
+        // wrote the widget is the one who can fix it.
+        const res = await apiRequest<{ warnings?: string[] } | undefined>(
+          "PUT",
+          `/oapi/hubs/${enc(hubUid)}/pages/${enc(page.uid)}`,
+          update,
+        );
+        const warnings = res?.warnings ?? [];
+        return { created: true, pageUid: page.uid, title, ...(warnings.length ? { warnings } : {}) };
       }),
   );
 
@@ -154,8 +164,19 @@ export function registerHubTools(server: McpServer): void {
         for (const [k, v] of Object.entries(rest)) if (v !== undefined) body[k] = v;
         if (content != null) body.content = toTiptapContentString(content);
         if (Object.keys(body).length === 0) throw new Error("nothing to update — pass at least one field");
-        await apiRequest("PUT", `/oapi/hubs/${enc(hubUid)}/pages/${enc(pageUid)}`, body);
-        return { updated: true, pageUid, fields: Object.keys(body) };
+        // Same advisory warnings contract as create (see above).
+        const res = await apiRequest<{ warnings?: string[] } | undefined>(
+          "PUT",
+          `/oapi/hubs/${enc(hubUid)}/pages/${enc(pageUid)}`,
+          body,
+        );
+        const warnings = res?.warnings ?? [];
+        return {
+          updated: true,
+          pageUid,
+          fields: Object.keys(body),
+          ...(warnings.length ? { warnings } : {}),
+        };
       }),
   );
 
