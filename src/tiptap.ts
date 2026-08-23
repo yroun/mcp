@@ -55,6 +55,9 @@ const WIDGET_ARRAY_ATTRS: Record<string, string[]> = {
   apiRequestBlock: ["bodyFields", "customHeaders"],
   apiQueueBlock: ["groupOrder", "rowColumns"],
   faqBlock: ["staticData"],
+  statGridBlock: ["tiles"],
+  // statGrid is a tolerated alias (the server canonicalizes the name).
+  statGrid: ["tiles"],
 };
 
 function normalizeWidgetArrayAttrs(node: unknown): void {
