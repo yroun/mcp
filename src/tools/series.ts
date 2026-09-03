@@ -72,11 +72,18 @@ export function registerSeriesTools(server: McpServer): void {
       description:
         "Read the series story bible — worldview, theme, message, planned beats, foreshadowing, " +
         "ending. Read this BEFORE yroun_series_set_bible: set replaces what's stored.",
-      inputSchema: { seriesUid: z.string() },
+      // Authenticated like set_bible: the bible is the author's plan (ending,
+      // beats, foreshadowing), not reader data — the old anonymous
+      // /api/v1/series/{uid}/bible read is being gated server-side.
+      inputSchema: { hubUid: z.string(), seriesUid: z.string() },
       annotations: READ,
     },
-    async ({ seriesUid }) =>
-      run(async () => (await publicRequest(`/api/v1/series/${enc(seriesUid)}/bible`)) ?? "No bible set yet."),
+    async ({ hubUid, seriesUid }) =>
+      run(
+        async () =>
+          (await apiRequest("GET", `/oapi/hubs/${enc(hubUid)}/series/${enc(seriesUid)}/bible`)) ??
+          "No bible set yet.",
+      ),
   );
 
   server.registerTool(
