@@ -1,7 +1,7 @@
 {
   "name": "@yroun/mcp",
   "version": "0.2.8",
-  "description": "Official MCP server for Yroun — Claude/Cursor/etc. can read+write Hub pages, posts, schedules, members via Yroun Open API.",
+  "description": "Official MCP server for Yroun \u2014 Claude/Cursor/etc. can read+write Hub pages, posts, schedules, members via Yroun Open API.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -25,7 +25,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -44,5 +44,14 @@
     "type": "git",
     "url": "git+https://github.com/yroun/mcp.git"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "overrides": {
+    "hono": "^4.13.5",
+    "@hono/node-server": "^1.19.15",
+    "fast-uri": "^3.1.6",
+    "ip-address": "^10.7.0",
+    "qs": "^6.16.0",
+    "nanoid": "^3.3.18",
+    "postcss": "^8.5.23"
+  }
 }
