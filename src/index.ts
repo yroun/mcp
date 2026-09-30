@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { registerAuthTools } from "./tools/auth.js";
 import { registerHubTools } from "./tools/hub.js";
+import { registerReadingTools } from "./tools/reading.js";
 import { registerSeriesTools } from "./tools/series.js";
 import { PKG_VERSION } from "./version.js";
 
@@ -21,6 +22,7 @@ async function main(): Promise<void> {
   registerAuthTools(server);
   registerHubTools(server);
   registerSeriesTools(server);
+  registerReadingTools(server);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);

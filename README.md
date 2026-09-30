@@ -62,7 +62,7 @@ immediately; or a stale npx cache — `npx clear-npx-cache`, then relaunch.
 
 Ask your AI client to run the **`yroun_connect`** tool. Your browser opens, you sign in to Yroun and approve the requested permissions, and the connector is ready. The grant persists across sessions.
 
-## Tools (v0.2)
+## Tools (v0.3)
 
 | Tool | What it does |
 |---|---|
@@ -78,6 +78,8 @@ Ask your AI client to run the **`yroun_connect`** tool. Your browser opens, you 
 | `yroun_series_upsert_episode` / `yroun_series_add_episode` | Write episodes (plain text auto-converted to the episode document format; upsert by number is idempotent) |
 | `yroun_series_set_bible` / `yroun_series_set_cast` | Story bible (worldview, beats, foreshadowing) + character cast |
 | `yroun_series_update_status` / `yroun_series_set_pen_name` | Lifecycle status + public byline |
+| `yroun_briefing_list_editions` / `yroun_briefing_get_edition` | Published daily market briefings for KR, US and JP — one market's frozen record for one day. Anonymous reads, so they work before you connect |
+| `yroun_finance_search_stocks` / `yroun_finance_get_stock` / `yroun_finance_get_candles` | Public market data — find a company by name, read its current state, read its price history |
 
 List/get tools carry the MCP `readOnlyHint` annotation, so clients can distinguish reads from writes.
 
@@ -85,7 +87,7 @@ Requests are metered by your Yroun plan's unified credit pool (the same meter as
 
 ## Scopes
 
-v0.2 requests `hub.read hub.write posts.read posts.write series.read series.write`. Mate tools (and their scopes) arrive in a later release. If you connected on v0.1, the next authorize shows a one-time delta-consent prompt for the series scopes.
+v0.3 requests `hub.read hub.write posts.read posts.write series.read series.write` — unchanged from v0.2. The briefing and finance tools need no new scope: editions are anonymous public reads, and `/oapi/finance/stocks` scopes nothing by caller, so both arrive without a consent step. Mate tools (and their scopes) arrive in a later release. If you connected on v0.1, the next authorize shows a one-time delta-consent prompt for the series scopes.
 
 ## Capability boundary
 
