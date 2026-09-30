@@ -1,0 +1,18 @@
+{
+  "name": "yroun",
+  "displayName": "Yroun",
+  "description": "Read Yroun's daily market briefings and public market data, and write to hubs, pages and series you own.",
+  "version": "0.3.0",
+  "author": {
+    "name": "Yroun",
+    "url": "https://www.yroun.com"
+  },
+  "homepage": "https://www.yroun.com",
+  "license": "MIT",
+  "mcpServers": {
+    "yroun": {
+      "command": "npx",
+      "args": ["-y", "@yroun/mcp@0.3.0"]
+    }
+  }
+}
