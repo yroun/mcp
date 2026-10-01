@@ -12,7 +12,15 @@
   "mcpServers": {
     "yroun": {
       "command": "npx",
-      "args": ["-y", "@yroun/mcp@0.3.0"]
+      "args": [
+        "-y",
+        "@yroun/mcp@0.3.0"
+      ]
     }
-  }
+  },
+  "repository": "https://github.com/yroun/mcp",
+  "documentationUrl": "https://guide.yroun.com",
+  "privacyPolicyUrl": "https://accounts.yroun.com/privacy",
+  "termsOfServiceUrl": "https://accounts.yroun.com/terms",
+  "supportUrl": "https://github.com/yroun/mcp/issues"
 }
