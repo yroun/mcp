@@ -102,6 +102,28 @@ This connector ships **end-user capabilities only**. Everything it can do, it do
 
 Credentials are stored at `~/.config/yroun-mcp/credentials.json` (owner-only permissions).
 
+## Directory plugin
+
+`plugin/` is the bundle listed in the Claude directory — the manifest, the
+listing README, the licence, the icon and two skills. It is a subfolder rather
+than the repo root because the directory holds a version for a reviewer when
+`package.json` sits beside `package-lock.json` in the plugin folder.
+
+A local stdio server cannot be listed as an MCP *connector* — that kind is for
+remote URL servers — so the bundle is the only route, and it carries the server
+reference rather than being one. The listing runs on Claude Code and Cowork;
+claude.ai does not run local servers, so listing it there would hand an
+installer the skills with none of the tools.
+
+**The manifest pins an exact version, and every release bumps it.** Directory
+validation refuses an unpinned launcher, so `@yroun/mcp@latest` — the release
+invariant everywhere else (root `CLAUDE.md`) — is impossible here. Publishing a
+new package version without raising the pin leaves every plugin user on the old
+one, silently, and auto-publish means the bump itself is the release. No check
+enforces this yet; the gate owed is **manifest pin == `package.json` version**,
+asserted in `npm test` so `prepublishOnly` refuses a mismatched release.
+Decision: `ops/decisions.md` 2026-10-02 `mcp/plugin-pins-an-exact-version`.
+
 ## Development
 
 ```bash
