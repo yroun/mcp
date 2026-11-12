@@ -109,7 +109,7 @@ listing README, the licence, the icon and two skills. It is a subfolder rather
 than the repo root because the directory holds a version for a reviewer when
 `package.json` sits beside `package-lock.json` in the plugin folder.
 
-A local stdio server cannot be listed as an MCP *connector*, since that kind is for
+A local stdio server cannot be listed as an MCP *connector*: that kind is for
 remote URL servers, so the bundle is the only route, and it carries the server
 reference rather than being one. The listing runs on Claude Code and Cowork;
 claude.ai does not run local servers, so listing it there would hand an
